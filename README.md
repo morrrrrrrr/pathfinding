@@ -10,7 +10,7 @@ A*-Pathfinding Algorithm Header-Only Implementation in C++
 
 - [Installation](#installation)
 - [License](#license)
-- [Requirements]()
+- [Requirements](#requirements)
 
 ## Installation
 
