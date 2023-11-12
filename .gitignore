@@ -435,3 +435,7 @@ FodyWeavers.xsd
 
 # Ignore output directory
 /output/
+
+tests/lodepng.h
+tests/lodepng.cpp
+tests/maze_output/
