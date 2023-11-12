@@ -77,7 +77,10 @@ void testGridFunctions(const pathfinding::Grid<int>& grid) {
 }
 
 void testPathfinderFunctions(const pathfinding::Pathfinder<int> pathfinder) {
-    
+    namespace pf = pathfinding;
+    std::vector<pf::Node> path;
+    pathfinder.find(pf::Node(0, 0), pf::Node(4, 4), path);
+    const pf::Node gridSize = pf::getGridSize(pathfinder.getGrid());
 }
 
 int main(int argc, char** argv) {
