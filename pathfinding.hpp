@@ -1,6 +1,6 @@
 /*
  * File: pathfinding.hpp
- * Desc: 
+ * Desc: A*-Pathfinding Algorithm Header-Only Implementation in C++
  */
 
 #ifndef PATHFINDING_HPP
@@ -9,6 +9,7 @@
 #include <vector>
 #include <string>
 #include <stdexcept>
+#include <functional>
 
 namespace pathfinding {
     // Structure representing a 2D point.
@@ -16,8 +17,21 @@ namespace pathfinding {
         int x, y;
         
         // Constructors
-        inline Node() : x(0), y(0) { }
-        inline Node(int x, int y) : x(x), y(y) { }
+        Node() : x(0), y(0) { }
+        Node(int x, int y) : x(x), y(y) { }
+
+        ~Node() { }
+        // copy constructor
+        Node(const Node& other) :
+            x(other.x), 
+            y(other.y) {
+            
+        }
+        Node(Node&& other) noexcept : 
+            x(std::move(other.x)), 
+            y(std::move(other.y)) {
+            
+        }
     };
 
     // Template for a 2D grid.
@@ -78,8 +92,59 @@ namespace pathfinding {
     template<typename T>
     class Pathfinder {
         Grid<T> grid;
+        // any movement cost under 0 means the field is untraversable
+        std::function<double(T)> movementCostFunction;
     public:
-        Pathfinder(const Grid<T>& grid) : grid(grid) { };
+        // constructors
+
+        // pathfinder-constructor for a grid of type int with preset (1:1) movement cost function.
+        Pathfinder(const Grid<int>& grid) : 
+        grid(grid), 
+        movementCostFunction([&](int input) -> double { return double(input); }) {
+            
+        }
+        // pathfinder-constructor for a grid of any type with user-definable movement cost function.
+        Pathfinder(const Grid<T>& grid, const std::function<double(T)>& movementCostFunction) : 
+            grid(grid), 
+            movementCostFunction(movementCostFunction) { 
+            
+        }
+
+        // destructor
+        ~Pathfinder() {
+
+        }
+
+        // copy constructor
+        Pathfinder(const Pathfinder& other) : 
+            grid(other.grid), 
+            movementCostFunction(other.movementCostFunction) {
+
+        }
+
+        // move constructor
+        Pathfinder(Pathfinder&& other) noexcept : 
+            grid(std::move(other.grid)), 
+            movementCostFunction(std::move(other.movementCostFunction)) {
+
+        }
+
+        // Setters
+        void setGrid(const Grid<T>& grid) {
+            this->grid = grid;
+        }
+
+        void setMovementCostFunction(std::function<double(T)>& movementCostFunction) {
+            this->movementCostFunction = movementCostFunction;
+        }
+
+        // Getters
+        const Grid<T>& getGrid() {
+            return grid;
+        }
+        const std::function<double(T)>& getMovementCostFunction() {
+            return movementCostFunction;
+        }
     };
 } // namespace pathfinding
 
