@@ -20,7 +20,7 @@ void testGridFunctions(const pathfinding::Grid<int>& grid) {
 
     std::cout << "Test of the Get-Functions:\n";
 
-    const pf::Node size = pf::getGridSize(grid);
+    const pf::Node size = grid.getSize();
     std::cout << "\tPrint grid size:\n";
     // in node.x is the grid X size, int node.y the grid Y size
     std::cout << "Size X: " << size.x << ", Size Y: " << size.y << "\n";
@@ -31,7 +31,7 @@ void testGridFunctions(const pathfinding::Grid<int>& grid) {
 
     for (int y = 0; y < size.y; y++) {
         for (int x = 0; x < size.x; x++) { 
-            std::cout << std::to_string(pf::getGridValue(grid, x, y));
+            std::cout << std::to_string(grid.at(x, y));
         }
         std::cout << "\n";
     }
@@ -62,9 +62,9 @@ void testGridFunctions(const pathfinding::Grid<int>& grid) {
     // changing a value then printing again:
 
     // change the top left to 9:
-    pf::getGridValue(newGrid, 0, 0) = 9;
+    newGrid.at(0, 0) = 9;
     // explanation: newGrid is mutable, so getGridValue returns a mutable reference of the position in the grid
-
+    
     std::cout << "\n\tPrint modified Grid:\n";
     printGrid(newGrid);
     /*
@@ -77,20 +77,17 @@ void testGridFunctions(const pathfinding::Grid<int>& grid) {
 }
 
 void testPathfinderFunctions(const pathfinding::Pathfinder<int> pathfinder) {
-    namespace pf = pathfinding;
-    std::vector<pf::Node> path;
-    pathfinder.find(pf::Node(0, 0), pf::Node(4, 4), path);
-    const pf::Node gridSize = pf::getGridSize(pathfinder.getGrid());
+    
 }
 
 int main(int argc, char** argv) {
-    const pathfinding::Grid<int> grid {
+    const pathfinding::Grid<int> grid ({
         { 0, 0, 0, 0, 0 },
         { 0, 0, 0, 0, 0 },
         { 0, 1, 1, 1, 0 },
         { 0, 0, 0, 1, 0 },
         { 0, 0, 0, 0, 0 }
-    };
+    });
 
     testGridFunctions(grid);
 

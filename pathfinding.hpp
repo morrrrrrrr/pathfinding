@@ -38,57 +38,102 @@ namespace pathfinding {
 
     // Template for a 2D grid.
     template<typename T>
-    using Grid = std::vector<std::vector<T>>;
+    class Grid {
+    private:
+        std::vector<std::vector<T>> data;
+    public:
+        Grid() {
+            
+        }
+        Grid(std::vector<std::vector<T>> data) : data(data) {
+            
+        }
 
-    // Access a mutable value in the grid based on a Node.
-    template<typename T>
-    inline T& getGridValue(Grid<T>& grid, const Node& node) {
-        try { // Handle out-of-range access gracefully.
-            return grid.at(node.y).at(node.x); 
-        }
-        catch (std::out_of_range& err) {
-            throw std::out_of_range("Grid access error: " + std::string(err.what()));
-        }
-    }
-    // Access a mutable value in the grid based on x and y coordinates.
-    template<typename T>
-    inline T& getGridValue(Grid<T>& grid, const int& x, const int& y) {
-        try { // Handle out-of-range access gracefully.
-            return grid.at(y).at(x); 
-        }
-        catch (std::out_of_range& err) {
-            throw std::out_of_range("Grid access error: " + std::string(err.what()));
-        }
-    }
+        ~Grid() {
 
-    // Access an immutable value in the grid based on a Node.
-    template<typename T>
-    inline const T& getGridValue(const Grid<T>& grid, const Node& node) {
-        try { // Handle out-of-range access gracefully.
-            return grid.at(node.y).at(node.x); 
         }
-        catch (std::out_of_range& err) {
-            throw std::out_of_range("Grid access error: " + std::string(err.what()));
-        }
-    }
-    // Access an immutable value in the grid based on x and y coordinates.
-    template<typename T>
-    inline const T& getGridValue(const Grid<T>& grid, const int& x, const int& y) {
-        try { // Handle out-of-range access gracefully.
-            return grid.at(y).at(x); 
-        }
-        catch (std::out_of_range& err) {
-            throw std::out_of_range("Grid access error: " + std::string(err.what()));
-        }
-    }
 
-    // Get the size of the grid. returns the size as a Node-struct
-    // (Node.x => grid size x) 
-    // (Node.y => grid size y)
-    template<typename T>
-    inline const Node getGridSize(const Grid<T>& grid) {
-        return Node(grid[0].size(), grid.size());
-    }
+        Grid(const Grid& copy) : data(copy.data) {
+
+        }
+        Grid(Grid&& move) : data(std::move(move.data)) {
+            
+        }
+
+        // returns the begin of the y-Rows
+        typename std::vector<std::vector<T>>::iterator begin() {
+            return data.begin();
+        }
+        // returns the end of the y-Rows
+        typename std::vector<std::vector<T>>::iterator end() {
+            return data.end();
+        }
+        // returns the begin of the y-Rows
+        typename std::vector<std::vector<T>>::const_iterator begin() const {
+            return data.begin();
+        }
+        // returns the end of the y-Rows
+        typename std::vector<std::vector<T>>::const_iterator end() const {
+            return data.end();
+        }
+
+        const Node getSize() const {
+            // check if grid is completely empty before accessing row 0
+            if (data.size() == 0) return Node(0, 0);
+            // there is atleast one row in y, so data[0] is completely safe
+            return Node(data[0].size(), data.size());
+        }
+
+        bool inBounds(const int x, const int y) const {
+            const Node size = this->getSize();
+            return (x >= 0 && x < size.x || y >= 0 || y < size.y);
+        }
+        bool inBounds(const Node& node) const {
+            return inBounds(node.x, node.y);
+        }
+
+        // mutable
+        T& at(const int x, const int y) {
+            try { // Handle out-of-range access gracefully.
+                return data.at(y).at(x);
+            }
+            catch (std::out_of_range& err) {
+                throw std::out_of_range("Grid access error: " + std::string(err.what()));
+            }
+        }
+        T& at(const Node& node) {
+            try { // Handle out-of-range access gracefully.
+                return data.at(node.y).at(node.x);
+            }
+            catch (std::out_of_range& err) {
+                throw std::out_of_range("Grid access error: " + std::string(err.what()));
+            }
+        }
+        T& operator[](const Node& node) {
+            return this->at(node);
+        }
+
+        // immutable
+        const T& at(const int x, const int y) const {
+            try { // Handle out-of-range access gracefully.
+                return data.at(y).at(x);
+            }
+            catch (std::out_of_range& err) {
+                throw std::out_of_range("Grid access error: " + std::string(err.what()));
+            }
+        }
+        const T& at(const Node& node) const {
+            try { // Handle out-of-range access gracefully.
+                return data.at(node.y).at(node.x);
+            }
+            catch (std::out_of_range& err) {
+                throw std::out_of_range("Grid access error: " + std::string(err.what()));
+            }
+        }
+        const T& operator[](const Node& node) const {
+            return this->at(node);
+        }
+    };
 
     // A template class for the a*-pathfinding algorithms.
     template<typename T>
@@ -180,8 +225,8 @@ namespace pathfinding {
         }
 
         std::vector<PathNode*> getNeighbors(PathNode* current, Grid<PathNode>& nodes, const Grid<double> move) {
-            const Node moveSize = getGridSize(move);
-            const Node nodesSize = getGridSize(nodes);
+            const Node moveSize = move.getSize();
+            const Node nodesSize = nodes.getSize();
 
             std::vector<PathNode*> neighbors;
 
@@ -192,7 +237,7 @@ namespace pathfinding {
                     const int realX = current->x + x;
                     if (realX < 0 || realX >= nodesSize.x) continue;
 
-                    neighbors.push_back(&getGridValue(nodes, realX, realY));
+                    neighbors.push_back(&nodes.at(realX, realY));
                 }
             }
 
@@ -221,7 +266,7 @@ namespace pathfinding {
             path.clear();
             Grid<PathNode> pathnodes;
             std::priority_queue<PathNode*, std::vector<PathNode*>, CompareFunction> list;
-            const Node size = getGridSize(this->grid);
+            const Node size = this->grid.getSize();
             for (int y = 0; y < size.y; y++) {
                 std::vector<PathNode> pathnode_list;
                 for (int x = 0; x < size.x; x++) {
@@ -231,7 +276,7 @@ namespace pathfinding {
                 pathnodes.emplace_back(pathnode_list);
             }
 
-            PathNode& start = getGridValue(pathnodes, startNode), end = getGridValue(pathnodes, endNode);
+            PathNode& start = pathnodes[startNode], end = pathnodes[endNode];
             start.g = 0;
             start.h = hCost(startNode, endNode);
             start.f = start.g + start.h;
@@ -252,7 +297,7 @@ namespace pathfinding {
                 for (PathNode* neighbor : getNeighbors(current, pathnodes, move)) {
                     double tentativeG = 
                         current->g + cost(current, neighbor) * 
-                        getGridValue(move, neighbor->x - current->x + 1, neighbor->y - current->y + 1);
+                        move.at(neighbor->x - current->x + 1, neighbor->y - current->y + 1);
 
                     if (tentativeG < neighbor->g || neighbor->g == -1) {
                         neighbor->parent = current;
