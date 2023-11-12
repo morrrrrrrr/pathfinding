@@ -77,21 +77,62 @@ void testGridFunctions(const pathfinding::Grid<int>& grid) {
 }
 
 void testPathfinderFunctions(const pathfinding::Pathfinder<int> pathfinder) {
+    namespace pf = pathfinding;
     
+    const auto& grid = pathfinder.getGrid();
+
+    std::vector<pf::Node> path;
+
+    std::cout << "\n\nStarting pathfinding\n" << std::flush;
+    std::cout << "Result: " << pathfinder.find(pf::Node(4, 4), pf::Node(0, 0), path, pf::Grid<double>({ 
+        { 1.4,   1, 1.4 },
+        {   1,   0,   1 },
+        { 1.4,   1, 1.4 }
+    })) << "\n";
+    std::cout << "Done with pathfinding\nPath length: " << path.size() << "\n\n";
+
+    const pf::Node size = grid.getSize();
+    for (int y = 0; y < size.y; y++) {
+        for (int x = 0; x < size.x; x++) {
+            const pf::Node node(x, y);
+            bool pathContainsNode = false;
+
+            for (const auto& entry : path) {
+                if (node == entry) {
+                    pathContainsNode = true;
+                    break;
+                }
+            }
+
+            if (pathContainsNode) {
+                std::cout << "XX";
+            }
+            else {
+                std::cout << "  ";
+            }
+        }
+
+        std::cout << "\n";
+    }
 }
 
 int main(int argc, char** argv) {
     const pathfinding::Grid<int> grid ({
-        { 0, 0, 0, 0, 0 },
-        { 0, 0, 0, 0, 0 },
-        { 0, 1, 1, 1, 0 },
-        { 0, 0, 0, 1, 0 },
-        { 0, 0, 0, 0, 0 }
+        { 0, -1, 0, 0, 0 },
+        { 0, -1, 0, -1, 0 },
+        { 0, -1, 0, -1, 0 },
+        { 0, -1, 0, -1, 0 },
+        { 0, 0, -1, 0, 0 }
     });
 
-    testGridFunctions(grid);
+    //testGridFunctions(grid);
 
-    pathfinding::Pathfinder<int> pathfinder(grid);
+    pathfinding::Pathfinder<int> pathfinder(grid, [&](int from, int to) -> double {
+        if (to < 0)
+            return -1;
+        if (to >= 0)
+            return to + 1;
+    });
 
     testPathfinderFunctions(pathfinder);
 
