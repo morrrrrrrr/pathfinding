@@ -42,9 +42,6 @@ namespace pathfinding {
     private:
         std::vector<std::vector<T>> data;
     public:
-        Grid() {
-            
-        }
         Grid(std::vector<std::vector<T>> data) : data(data) {
             
         }
@@ -58,6 +55,12 @@ namespace pathfinding {
         }
         Grid(Grid&& move) : data(std::move(move.data)) {
             
+        }
+        Grid operator=(const Grid& copy) {
+            this->data = copy.data;
+        }
+        Grid operator=(Grid&& move) {
+            this->data = std::move(move.data);
         }
 
         // returns the begin of the y-Rows
