@@ -63,11 +63,6 @@ Node(int x, int y) : x(x), y(y) {
 
 Grid is a matrix-type-object of any Type
 
-#### Definition:
-```cpp
-template<typename T>
-using Grid = std::vector<std::vector<T>>;
-```
 #### Grid Creation Use Example (from tests/test.cpp):
 ```cpp
 const pathfinding::Grid<int> grid {
@@ -80,26 +75,75 @@ const pathfinding::Grid<int> grid {
 ```
 
 #### Related Functions:
+
+ - [Constructors](#1-constructors)
+ - [Access](#2-access-functions)
+ - [Getter](#3-getter-functions)
+ - [Iterator](#4-iterator-functions)
+
+##### 1. **Constructors**
+This initialized the grid with the data specified (see [Grid-Creation](#grid-creation-use-example-from-teststestcpp))
 ```cpp
-// get immutable Element from immutable grid
-const T& getGridValue(const Grid<T>& grid, const Node& node); // through const node
-const T& getGridValue(const Grid<T>& grid, const int x, const int y); // through x and y
+Grid(std::vector<std::vector<T>> data)
+```
 
-// get mutable Element from mutable grid
-T& getGridValue(Grid<T>& grid, const Node& node); // through const node
-T& getGridValue(Grid<T>& grid, const int x, const int y); // through x and y
+##### 2. **Access-Functions**
+ - Mutable
+```cpp
+T& at(const int x, const int y);
+T& at(const Node& node);
+T& operator[](const Node& node);
+```
+ - Immutable
+```cpp
+const T& at(const int x, const int y) const;
+const T& at(const Node& node) const;
+const T& operator[](const Node& node) const;
+```
 
-// get Grid Size as Node where node.x is the grid size x and node.y is the grid size y
-const Node getGridSize(const Grid<T>& grid);
+##### 3. **Getter-Functions**
+Returns the data Size in a node:
+    - Node.x is data size.x
+          .y             .y
+```cpp
+const Node getSize() const;
+```
+returns `true` if the indexes are in bounds of the data
+```cpp
+bool inBounds(const int x, const int y) const;
+bool inBounds(const Node& node) const;
+```
+
+##### 4. **Iterator-Functions**
+These return a (const-)`iterator` to the y row of the grid data (for iterator based loops (see [Iterator-Loops](#functions-use-example-from-teststestcpp)))
+```cpp
+ // returns the begin of the y-Rows
+typename std::vector<std::vector<T>>::iterator begin();
+// returns the end of the y-Rows
+typename std::vector<std::vector<T>>::iterator end();
+// returns the begin of the y-Rows
+typename std::vector<std::vector<T>>::const_iterator begin() const;
+// returns the end of the y-Rows
+typename std::vector<std::vector<T>>::const_iterator end() const;
 ```
 
 #### Functions Use Example (from tests/test.cpp):
-Application case: Printing a whole grid through manual iteration:
+
+1. **Index-based Loop**
 ```cpp
-const pf::Node size = pf::getGridSize(grid);
+const pf::Node size = grid.getSize();
 for (int y = 0; y < size.y; y++) {
     for (int x = 0; x < size.x; x++) { 
-        std::cout << std::to_string(pf::getGridValue(grid, x, y));
+        std::cout << std::to_string(grid.at(x, y));
+    }
+    std::cout << "\n";
+}
+```
+2. **Iterator-based Loop**
+```cpp
+for (const auto& yRow : grid) {
+    for (const auto& element : yRow) {
+        std::cout << element;
     }
     std::cout << "\n";
 }
@@ -118,37 +162,72 @@ The `Pathfinder` class encapsulates essential functionality for pathfinding algo
 3. **Pathfinding Logic:**
    - The class incorporates the core logic for pathfinding algorithms, providing a foundation for finding optimal paths within the specified grid.
 
-#### Definition
+#### Movement Cost Function
+
+The movement cost function (`MCF`) defines the cost to move from `T from` to `T to`.
+The `MCF` returns a `double` and takes a `T from` and `T to`
+
+if the `MCF` returns a number lower than 0, the field is treated as `intraversable`
+
+This is the automatic preset `MCF` for an `int`-Pathfinder.
+```cpp
+[&](int nodeFrom, int nodeTo) -> double { 
+    if (nodeTo < 0)
+        return -1;
+    if (nodeTo >= 0)
+        return nodeTo + 1; 
+}
+```
+
+#### Pathfinder Use Example (from tests/test.cpp):
+
+
+
+#### Pathfinder Functions
+
+ - [Constructors](#1-constructors-1)
+ - [Setter-Functions](#2-setter-functions)
+ - [Getter-Functions](#3-getter-functions-1)
+ - [Pathfind-Functions](#4-pathfind-function)
+
+##### 1. **Constructors**
+
+A constructor for an `integer`-based Grid/Pathfinder. 
+The `MCF` is pre-set to output the grid value
+```cpp
+Pathfinder(const Grid<int>& grid)
+```
+A constructor for a `T`-based Grid with custom `MCF`
+```cpp
+Pathfinder(const Grid<T>& grid, const std::function<double(T from, T to)>& movementCostFunction)
+```
+
+##### 2. **Setter-Functions**
 
 ```cpp
-template<typename T>
-class Pathfinder {
-    Grid<T> grid;
-    // any movement cost under 0 means the field is untraversable
-    std::function<double(T)> movementCostFunction;
-public:
-    // pathfinder-constructor for a grid of type int with preset (1:1) movement cost function.
-    Pathfinder(const Grid<int>& grid);
-    // pathfinder-constructor for a grid of any type with user-definable movement cost function.
-    Pathfinder(const Grid<T>& grid, const std::function<double(T)>& movementCostFunction);
+void setGrid(const Grid<T>& grid)
+void setMovementCostFunction(std::function<double(T, T)>& movementCostFunction)
+```
 
-    // destructor
-    ~Pathfinder();
+##### 3. **Getter-Functions**
 
-    // copy constructor
-    Pathfinder(const Pathfinder& other);
+```cpp
+const Grid<T>& getGrid() const
+const std::function<double(T, T)>& getMovementCostFunction() const
+```
 
-    // move constructor
-    Pathfinder(Pathfinder&& other) noexcept;
+##### 4. **Pathfind-Functions**
 
-    // Setters
-    void setGrid(const Grid<T>& grid);
-    void setMovementCostFunction(std::function<double(T)>& movementCostFunction);
+Main Pathfind function:
 
-    // Getters
-    const Grid<T>& getGrid();
-    const std::function<double(T)>& getMovementCostFunction();
-}
+ - `startNode`: The starting node for the pathfinding algorithm.
+ - `endNode`:   The target or goal node that the algorithm is trying to reach.
+ - `path`:      A reference to a vector of nodes. This vector will be populated with the nodes representing the computed path from the start node to the end node.
+ - `move`:      A grid of movement costs. This grid likely represents the cost of moving from one node to another and is used by the pathfinding algorithm to determine the optimal path.
+ - `return`:    The function returns an integer; 0 => a valid path was found, 1 => no valid path was found
+
+```cpp
+int find(Node startNode, Node endNode, std::vector<Node>& path, const Grid<double> move) const
 ```
 
 ## License
