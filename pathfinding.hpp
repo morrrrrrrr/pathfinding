@@ -260,7 +260,12 @@ namespace pathfinding {
         }
 
     public:
-        // @param move must be a 3 by 3 grid 
+        // main-pathfind function
+        // @param startNode the node where the path starts 
+        // @param endNode the node where the path ends
+        // @param move must be a 3 by 3 grid. the move-Grid defines how much it costs to move in which direction 
+        // @return (0 - a path was found) and
+        //         (1 - no valid path was found)
         int find(Node startNode, Node endNode, std::vector<Node>& path, const Grid<double> move = { 
             { 1.4,   1, 1.4 },
             {   1,   0,   1 },
