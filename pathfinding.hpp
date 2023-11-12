@@ -278,14 +278,18 @@ namespace pathfinding {
         }
 
         PathNode* getAndRemoveTop(std::vector<PathNode*>& pathlist) const {
+            // sort the path node list by lowest f-cost (but exclude unpopped nodes (f < 0))
             std::sort(pathlist.begin(), pathlist.end(), [&](const PathNode* node1, const PathNode* node2) -> bool {
-                if (node1->f == -1) return false;
-                if (node2->f == -1) return true;
+                if (node1->f < 0) return false;
+                if (node2->f < 0) return true;
 
                 return node1->f < node2->f;
             });
+            // save a pointer to the top node
             PathNode* top = pathlist.at(0);
+            // remove the top node from the list so that it won't be calculated again
             pathlist.erase(pathlist.begin());
+            // return pointer to the top node
             return top;
         }
 
@@ -297,7 +301,10 @@ namespace pathfinding {
         // @param path: A vector to store the computed path
         // @return 0 if a path was found, 1 if no valid path was found
         int find(Node startNode, Node endNode, std::vector<Node>& path, const Grid<double>& move) const {
+            // clear input path
             path.clear();
+
+            // Initialize Grid with PathNodes
             std::vector<std::vector<PathNode>> nodes;
             const Node size = this->grid.getSize();
             for (int y = 0; y < size.y; y++) {
@@ -308,6 +315,8 @@ namespace pathfinding {
                 nodes.push_back(pathnode_list);
             }
             Grid<PathNode> pathnodes(nodes);
+
+            // Initialize nodeList
             std::vector<PathNode*> nodeList;
             for (int x = 0; x < size.x; x++) {
                 for (int y = 0; y < size.y; y++) {
@@ -315,6 +324,7 @@ namespace pathfinding {
                 }
             }
             
+            // Initialize start and end pointer
             // start from end and end on start
             // the output path normally is reverse. Instead of reversing the output path vector
             // run the algorithm in reverse and have the path output as normal
@@ -368,7 +378,7 @@ namespace pathfinding {
             // no valid path found
             return 1;
         }
-    };
+    }; // class Pathfinder<T>
 } // namespace pathfinding
 
 #endif
