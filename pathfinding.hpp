@@ -9,9 +9,11 @@
 #include <vector>
 #include <queue>
 #include <string>
+#include <iostream>
 #include <stdexcept>
 #include <functional>
 #include <cmath>
+#include <algorithm>
 
 namespace pathfinding {
     // Structure representing a 2D point.
@@ -34,6 +36,15 @@ namespace pathfinding {
             y(std::move(other.y)) {
             
         }
+        
+        Node operator=(const Node& other) {
+            this->x = other.x;
+            this->y = other.y;
+        }
+
+        bool operator==(const Node& other) const {
+            return this->x == other.x && this->y == other.y;
+        }
     };
 
     // Template for a 2D grid.
@@ -42,6 +53,9 @@ namespace pathfinding {
     private:
         std::vector<std::vector<T>> data;
     public:
+        Grid() {
+
+        }
         Grid(std::vector<std::vector<T>> data) : data(data) {
             
         }
@@ -150,7 +164,12 @@ namespace pathfinding {
         // pathfinder-constructor for a grid of type int with preset (1:1) movement cost function.
         Pathfinder(const Grid<int>& grid) : 
         grid(grid), 
-        movementCostFunction([&](int nodeFrom, int nodeTo) -> double { return double(nodeTo); }) {
+        movementCostFunction([&](int nodeFrom, int nodeTo) -> double { 
+            if (nodeTo < 0)
+                return -1;
+            if (nodeTo >= 0)
+                return nodeTo + 1; 
+        }) {
             
         }
         // pathfinder-constructor for a grid of any type with user-definable movement cost function.
@@ -211,13 +230,14 @@ namespace pathfinding {
             }
         };
 
-        struct CompareFunction {
+        class CompareFunction {
+        public:
             bool operator()(const PathNode* node1, const PathNode* node2) const {
                 // Priority order: lower f-cost has higher priority
                 if (node1->f == -1) return node2;
                 if (node2->f == -1) return node1;
 
-                return node1->f > node2->f;
+                return node1->f < node2->f;
             }
         };
 
@@ -227,7 +247,7 @@ namespace pathfinding {
             return std::sqrt(x * x + y * y);
         }
 
-        std::vector<PathNode*> getNeighbors(PathNode* current, Grid<PathNode>& nodes, const Grid<double> move) {
+        std::vector<PathNode*> getNeighbors(PathNode* current, Grid<PathNode>& nodes, const Grid<double> move) const {
             const Node moveSize = move.getSize();
             const Node nodesSize = nodes.getSize();
 
@@ -239,6 +259,7 @@ namespace pathfinding {
                 for (int x = -moveSize.x / 2; x <= moveSize.x / 2; x++) {
                     const int realX = current->x + x;
                     if (realX < 0 || realX >= nodesSize.x) continue;
+                    if (x == 0 && y == 0) continue;
 
                     neighbors.push_back(&nodes.at(realX, realY));
                 }
@@ -248,69 +269,89 @@ namespace pathfinding {
         }
 
         // Function to reconstruct the path from start to goal
-        void reconstructPath(PathNode* start, PathNode* goal, std::vector<Node*>& path) {
-            PathNode* current = goal;
-
+        void reconstructPath(PathNode* end, std::vector<Node>& path) const {
+            PathNode* current = end;
             while (current != nullptr) {
-                path.push_back(current);
+                path.push_back(*current);
                 current = current->parent;
             }
+        }
 
-            path.reserve(sizeof(path));
+        PathNode* getAndRemoveTop(std::vector<PathNode*>& pathlist) const {
+            std::sort(pathlist.begin(), pathlist.end(), [&](const PathNode* node1, const PathNode* node2) -> bool {
+                if (node1->f == -1) return false;
+                if (node2->f == -1) return true;
+
+                return node1->f < node2->f;
+            });
+            PathNode* top = pathlist.at(0);
+            pathlist.erase(pathlist.begin());
+            return top;
         }
 
     public:
-        // main-pathfind function
-        // @param startNode the node where the path starts 
-        // @param endNode the node where the path ends
-        // @param move must be a 3 by 3 grid. the move-Grid defines how much it costs to move in which direction 
-        // @return (0 - a path was found) and
-        //         (1 - no valid path was found)
-        int find(Node startNode, Node endNode, std::vector<Node>& path, const Grid<double> move = { 
-            { 1.4,   1, 1.4 },
-            {   1,   0,   1 },
-            { 1.4,   1, 1.4 }
-        }) const {
+        // Main pathfinding function
+        // @param startNode: The node where the path starts
+        // @param endNode: The node where the path ends
+        // @param move: A 3x3 grid defining movement costs
+        // @param path: A vector to store the computed path
+        // @return 0 if a path was found, 1 if no valid path was found
+        int find(Node startNode, Node endNode, std::vector<Node>& path, const Grid<double>& move) const {
             path.clear();
-            Grid<PathNode> pathnodes;
-            std::priority_queue<PathNode*, std::vector<PathNode*>, CompareFunction> list;
+            std::vector<std::vector<PathNode>> nodes;
             const Node size = this->grid.getSize();
             for (int y = 0; y < size.y; y++) {
                 std::vector<PathNode> pathnode_list;
                 for (int x = 0; x < size.x; x++) {
-                    pathnode_list.emplace_back(Node(x, y));
-                    list.push(pathnode_list.back());
+                    pathnode_list.push_back(PathNode(Node(x, y)));
                 }
-                pathnodes.emplace_back(pathnode_list);
+                nodes.push_back(pathnode_list);
             }
+            Grid<PathNode> pathnodes(nodes);
+            std::vector<PathNode*> nodeList;
+            for (int x = 0; x < size.x; x++) {
+                for (int y = 0; y < size.y; y++) {
+                    nodeList.push_back(&pathnodes.at(x, y));
+                }
+            }
+            
+            // start from end and end on start
+            // the output path normally is reverse. Instead of reversing the output path vector
+            // run the algorithm in reverse and have the path output as normal
+            // -> switch start and end node
+            PathNode* start = &pathnodes[endNode], *end = &pathnodes[startNode];
 
-            PathNode& start = pathnodes[startNode], end = pathnodes[endNode];
-            start.g = 0;
-            start.h = hCost(startNode, endNode);
-            start.f = start.g + start.h;
-            start.parent = nullptr;
-            list.push(&start);
+            start->g = 0;
+            start->h = hCost(*start, *end);
+            start->f = start->g + start->h;
+            start->parent = nullptr;
 
-            while (!list.empty()) {
-                PathNode* current = list.top();
-                list.pop();
+            while (nodeList.size()) {
+                PathNode* current = getAndRemoveTop(nodeList);
+
+                std::cout << "Node: " << current->x << ", " << current->y << ", " << current->h << "\n" << std::flush;
 
                 // check if end is reached
-                if (current == &end) {
-                    reconstructPath(start, end, path);
+                if (Node(*current) == Node(*end)) {
+                    reconstructPath(current, path);
                     return 0;
                 }
 
                 // Explore neighbors
                 for (PathNode* neighbor : getNeighbors(current, pathnodes, move)) {
-                    double tentativeG = 
-                        current->g + cost(current, neighbor) * 
+                    double rawMovementCost = movementCostFunction(grid[static_cast<Node>(*current)], grid[static_cast<Node>(*neighbor)]) * 
                         move.at(neighbor->x - current->x + 1, neighbor->y - current->y + 1);
+                    double tentativeG = current->g + rawMovementCost;
+                    
+                    // g cost < 0 means intraversable node
+                    if (rawMovementCost < 0)
+                        continue;
 
-                    if (tentativeG < neighbor->g || neighbor->g == -1) {
+                    // neighbor->g < 0 would mean that the neighbor is unset
+                    if (tentativeG < neighbor->g || neighbor->g < 0) {
                         neighbor->parent = current;
                         neighbor->g = tentativeG;
-                        neighbor->h = calculateHeuristic(*neighbor, endNode);
+                        neighbor->h = hCost(*neighbor, *end);
                         neighbor->f = neighbor->g + neighbor->h;
                     }
                 }
