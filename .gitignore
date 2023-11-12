@@ -431,7 +431,7 @@ FodyWeavers.xsd
 *.app
 
 # Ignore vs code configurations
-/.vscode/
+.vscode/
 
 # Ignore output directory
 /output/
