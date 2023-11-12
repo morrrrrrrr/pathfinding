@@ -86,6 +86,11 @@ This initialized the grid with the data specified (see [Grid-Creation](#grid-cre
 ```cpp
 Grid(std::vector<std::vector<T>> data)
 ```
+This initialized the grid with the default value for T for size X,Y
+```cpp
+Grid(const Node& size)
+Grid(const int sizeX, const int sizeY)
+```
 
 ##### 2. **Access-Functions**
  - Mutable
@@ -160,6 +165,9 @@ The `Pathfinder` class encapsulates essential functionality for pathfinding algo
 3. **Pathfinding Logic:**
    - The class incorporates the core logic for pathfinding algorithms, providing a foundation for finding optimal paths within the specified grid.
 
+4. **Customizability:**
+   - The Pathfinding library can be included with the following flag `PATHFINDING_CALLBACKS` to enable callback functions in the pathfinding process for easy visualization
+
 #### Movement Cost Function
 
 The movement cost function (`MCF`) defines the cost to move from `T from` to `T to`.
@@ -177,17 +185,32 @@ This is the automatic preset `MCF` for an `int`-Pathfinder.
 }
 ```
 
+#### Callbacks
+
+ - On Node Popped:
+```cpp
+// this function gets called when the algorithm poppes (calculates) a node
+std::function<void(const Node& node)> onPoppedNodeCallback;
+```
+ - On Path Added: At the end of the Algorithm when the path gets constructed, this function gets called for each node that is added to the final path
+```cpp
+// this function gets called when a new node is added to the output path
+std::function<void(const Node& node)> onPathAddedCallback;
+```
+
+To include these Callbacks define `PATHFINDING_CALLBACKS` before including the library:
+```cpp
+#define PATHFINDING_CALLBACKS // include the callback functions
+#include <pathfinding.hpp>
+```
+
 #### Pathfinder Use Example (from tests/test.cpp):
 
 ```cpp
 namespace pf = pathfinding;
 // Create Path vector
 std::vector<pf::Node> path;
-pathfinder.find(pf::Node(4, 4), pf::Node(0, 0), path, pf::Grid<double>({ 
-    { 1.4,   1, 1.4 },
-    {   1,   0,   1 },
-    { 1.4,   1, 1.4 }
-}));
+pathfinder.find(pf::Node(4, 4), pf::Node(0, 0), path);
 ```
 
 #### Pathfinder Functions
@@ -208,6 +231,12 @@ A constructor for a `T`-based Grid with custom `MCF`
 ```cpp
 Pathfinder(const Grid<T>& grid, const std::function<double(T from, T to)>& movementCostFunction)
 ```
+A constructor for a `T`-based Grid with custom `MCF` and custom callback functions (Only enabled with `CALLBACKS`-Flag)
+```cpp
+Pathfinder(const Grid<T>& grid, const std::function<double(T from, T to)>& movementCostFunction, 
+    const std::function<void(const Node& node)>& onPoppedNodeCallback, 
+    const std::function<void(const Node& node)>& onPathAddedCallback)
+```
 
 ##### 2. **Setter-Functions**
 
@@ -215,12 +244,22 @@ Pathfinder(const Grid<T>& grid, const std::function<double(T from, T to)>& movem
 void setGrid(const Grid<T>& grid)
 void setMovementCostFunction(std::function<double(T, T)>& movementCostFunction)
 ```
+Only with `CALLBACKS`-Flag:
+```cpp
+void setPoppedNodeCallback(std::function<void(const Node& node)> onPoppedNodeCallback)
+void setPathAddedCallback(std::function<void(const Node& node)> onPathAddedCallback)
+```
 
 ##### 3. **Getter-Functions**
 
 ```cpp
 const Grid<T>& getGrid() const
 const std::function<double(T, T)>& getMovementCostFunction() const
+```
+Only with `CALLBACKS`-Flag:
+```cpp
+const std::function<void(const Node& node)>& getPoppedNodeCallback()
+const std::function<void(const Node& node)>& getPathAddedCallback()
 ```
 
 ##### 4. **Pathfind-Functions**
@@ -232,6 +271,15 @@ Main Pathfind function:
  - `path`:      A reference to a vector of nodes. This vector will be populated with the nodes representing the computed path from the start node to the end node.
  - `move`:      A grid of movement costs. This grid likely represents the cost of moving from one node to another and is used by the pathfinding algorithm to determine the optimal path.
  - `return`:    The function returns an integer; 0 => a valid path was found, 1 => no valid path was found
+
+Move has a default value:
+```cpp
+const Grid<double>& move = Grid<double>({ 
+    { 1.4,   1, 1.4 },
+    {   1,  -1,   1 },
+    { 1.4,   1, 1.4 }
+})
+```
 
 ```cpp
 int find(Node startNode, Node endNode, std::vector<Node>& path, const Grid<double> move) const

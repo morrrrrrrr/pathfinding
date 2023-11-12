@@ -59,6 +59,12 @@ namespace pathfinding {
         Grid(std::vector<std::vector<T>> data) : data(data) {
             
         }
+        Grid(const Node& size) {
+            data = std::vector<std::vector<T>>(size.y, std::vector<T>(size.x));
+        }
+        Grid(const int sizeX, const int sizeY) {
+            data = std::vector<std::vector<T>>(sizeY, std::vector<T>(sizeX));
+        }
 
         ~Grid() {
 
@@ -285,7 +291,8 @@ namespace pathfinding {
                     const int realX = current->x + x - moveSize.x / 2;
                     if (realX < 0 || realX >= nodesSize.x) continue;
                     // move has to be flipped, because the algorithm works backwards
-                    if (move.at(moveSize.x - x - 1, moveSize.y - y - 1) <= 0) continue;
+                    if (move.at(moveSize.x - x - 1, moveSize.y - y - 1) <= 0) 
+                        continue;
 
                     neighbors.push_back(&nodes.at(realX, realY));
                 }
@@ -330,7 +337,11 @@ namespace pathfinding {
         // @param move: A 3x3 grid defining movement costs
         // @param path: A vector to store the computed path
         // @return 0 if a path was found, 1 if no valid path was found
-        int find(Node startNode, Node endNode, std::vector<Node>& path, const Grid<double>& move) const {
+        int find(Node startNode, Node endNode, std::vector<Node>& path, const Grid<double>& move = Grid<double>({ 
+            { 1.4,   1, 1.4 },
+            {   1,  -1,   1 },
+            { 1.4,   1, 1.4 }
+        })) const {
             // clear input path
             path.clear();
 
@@ -390,14 +401,14 @@ namespace pathfinding {
                         // previos (unflipped move):
                         //move.at(neighbor->x - current->x + 1, neighbor->y - current->y + 1);
                     double tentativeG = current->g + rawMovementCost;
+
+                    // g cost < 0 means intraversable node
+                    if (rawMovementCost <= 0)
+                        continue;
                     
 #ifdef PATHFINDING_CALLBACKS
                     onPoppedNodeCallback(*neighbor);
 #endif
-
-                    // g cost < 0 means intraversable node
-                    if (rawMovementCost < 0)
-                        continue;
 
                     // neighbor->g < 0 would mean that the neighbor is unset
                     if (tentativeG < neighbor->g || neighbor->g < 0) {
