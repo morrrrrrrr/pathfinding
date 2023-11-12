@@ -3,6 +3,7 @@
  * Desc: A*-Pathfinding Algorithm Header-Only Implementation in C++
  */
 
+
 #ifndef PATHFINDING_HPP
 #define PATHFINDING_HPP
 
@@ -157,18 +158,25 @@ namespace pathfinding {
         Grid<T> grid;
         // any movement cost under 0 means the field is untraversable
         std::function<double(T from, T to)> movementCostFunction;
+#ifdef PATHFINDING_CALLBACKS // These can be disabled to improve execution time
+        // this function gets called when the algorithm poppes (calculates) a node
+        std::function<void(const Node& node)> onPoppedNodeCallback = [&](const Node& node){}; // default = empty function
+        // this function gets called when a new node is added to the output path
+        std::function<void(const Node& node)> onPathAddedCallback = [&](const Node& node){}; // default = emtpy function
+#endif
     public:
         // constructors
 
         // pathfinder-constructor for a grid of type int with preset (1:1) movement cost function.
         Pathfinder(const Grid<int>& grid) : 
-        grid(grid), 
-        movementCostFunction([&](int nodeFrom, int nodeTo) -> double { 
-            if (nodeTo < 0)
-                return -1;
-            if (nodeTo >= 0)
-                return nodeTo + 1; 
-        }) {
+            grid(grid), 
+            movementCostFunction([&](int nodeFrom, int nodeTo) -> double { 
+                if (nodeTo < 0)
+                    return -1;
+                if (nodeTo >= 0)
+                    return nodeTo + 1; 
+            }) 
+        {
             
         }
         // pathfinder-constructor for a grid of any type with user-definable movement cost function.
@@ -177,6 +185,17 @@ namespace pathfinding {
             movementCostFunction(movementCostFunction) { 
             
         }
+
+#ifdef PATHFINDING_CALLBACKS
+        // pathfinder-constructor for a grid of any type with user-definable movement cost function and callback functions
+        Pathfinder(const Grid<T>& grid, const std::function<double(T from, T to)>& movementCostFunction, 
+            const std::function<void(const Node& node)>& onPoppedNodeCallback, 
+            const std::function<void(const Node& node)>& onPathAddedCallback) : 
+            grid(grid), movementCostFunction(movementCostFunction), 
+            onPoppedNodeCallback(onPoppedNodeCallback), onPathAddedCallback(onPathAddedCallback) { 
+            
+        }
+#endif
 
         // destructor
         ~Pathfinder() {
@@ -206,6 +225,15 @@ namespace pathfinding {
             this->movementCostFunction = movementCostFunction;
         }
 
+#ifdef PATHFINDING_CALLBACKS
+        void setPoppedNodeCallback(std::function<void(const Node& node)> onPoppedNodeCallback) {
+            this->onPoppedNodeCallback = onPoppedNodeCallback;
+        }
+        void setPathAddedCallback(std::function<void(const Node& node)> onPathAddedCallback) {
+            this->onPathAddedCallback = onPathAddedCallback;
+        }
+#endif
+
         // Getters
         const Grid<T>& getGrid() const {
             return grid;
@@ -213,6 +241,15 @@ namespace pathfinding {
         const std::function<double(T, T)>& getMovementCostFunction() const {
             return movementCostFunction;
         }
+
+#ifdef PATHFINDING_CALLBACKS
+        const std::function<void(const Node& node)>& getPoppedNodeCallback() {
+            return onPoppedNodeCallback;
+        }
+        const std::function<void(const Node& node)>& getPathAddedCallback() {
+            return onPathAddedCallback;
+        }
+#endif
 
     private:
         struct PathNode : public Node {
@@ -226,17 +263,6 @@ namespace pathfinding {
                 this->h = -1;
                 this->f = -1;
                 this->parent = nullptr;
-            }
-        };
-
-        class CompareFunction {
-        public:
-            bool operator()(const PathNode* node1, const PathNode* node2) const {
-                // Priority order: lower f-cost has higher priority
-                if (node1->f == -1) return node2;
-                if (node2->f == -1) return node1;
-
-                return node1->f < node2->f;
             }
         };
 
@@ -273,6 +299,10 @@ namespace pathfinding {
             PathNode* current = end;
             while (current != nullptr) {
                 path.push_back(*current);
+
+#ifdef PATHFINDING_CALLBACKS
+                onPathAddedCallback(*current);
+#endif
                 current = current->parent;
             }
         }
@@ -361,6 +391,10 @@ namespace pathfinding {
                         //move.at(neighbor->x - current->x + 1, neighbor->y - current->y + 1);
                     double tentativeG = current->g + rawMovementCost;
                     
+#ifdef PATHFINDING_CALLBACKS
+                    onPoppedNodeCallback(*neighbor);
+#endif
+
                     // g cost < 0 means intraversable node
                     if (rawMovementCost < 0)
                         continue;
