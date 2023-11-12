@@ -9,7 +9,6 @@
 #include <vector>
 #include <queue>
 #include <string>
-#include <iostream>
 #include <stdexcept>
 #include <functional>
 #include <cmath>
@@ -253,13 +252,14 @@ namespace pathfinding {
 
             std::vector<PathNode*> neighbors;
 
-            for (int y = -moveSize.y / 2; y <= moveSize.y / 2; y++) {
-                const int realY = current->y + y;
+            for (int y = 0; y < moveSize.y; y++) {
+                const int realY = current->y + y - moveSize.y / 2;
                 if (realY < 0 || realY >= nodesSize.y) continue;
-                for (int x = -moveSize.x / 2; x <= moveSize.x / 2; x++) {
-                    const int realX = current->x + x;
+                for (int x = 0; x < moveSize.x; x++) {
+                    const int realX = current->x + x - moveSize.x / 2;
                     if (realX < 0 || realX >= nodesSize.x) continue;
-                    if (x == 0 && y == 0) continue;
+                    // move has to be flipped, because the algorithm works backwards
+                    if (move.at(moveSize.x - x - 1, moveSize.y - y - 1) <= 0) continue;
 
                     neighbors.push_back(&nodes.at(realX, realY));
                 }
@@ -329,7 +329,11 @@ namespace pathfinding {
             while (nodeList.size()) {
                 PathNode* current = getAndRemoveTop(nodeList);
 
-                std::cout << "Node: " << current->x << ", " << current->y << ", " << current->h << "\n" << std::flush;
+                // unpopped nodes have g < 0
+                // if the top node is unpopped, no correct solution exists
+                if (current->g < 0) {
+                    return 1;
+                }
 
                 // check if end is reached
                 if (Node(*current) == Node(*end)) {
@@ -339,8 +343,12 @@ namespace pathfinding {
 
                 // Explore neighbors
                 for (PathNode* neighbor : getNeighbors(current, pathnodes, move)) {
+                    // pop node
+                    // move has to be flipped, because the algorithm works backwards
                     double rawMovementCost = movementCostFunction(grid[static_cast<Node>(*current)], grid[static_cast<Node>(*neighbor)]) * 
-                        move.at(neighbor->x - current->x + 1, neighbor->y - current->y + 1);
+                        move.at(move.getSize().x - (neighbor->x - current->x + 2), move.getSize().y - (neighbor->y - current->y + 2));
+                        // previos (unflipped move):
+                        //move.at(neighbor->x - current->x + 1, neighbor->y - current->y + 1);
                     double tentativeG = current->g + rawMovementCost;
                     
                     // g cost < 0 means intraversable node

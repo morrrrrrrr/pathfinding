@@ -86,7 +86,7 @@ void testPathfinderFunctions(const pathfinding::Pathfinder<int> pathfinder) {
     std::cout << "\n\nStarting pathfinding\n" << std::flush;
     std::cout << "Result: " << pathfinder.find(pf::Node(4, 4), pf::Node(0, 0), path, pf::Grid<double>({ 
         { 1.4,   1, 1.4 },
-        {   1,   0,   1 },
+        {   1,  -1,   1 },
         { 1.4,   1, 1.4 }
     })) << "\n";
     std::cout << "Done with pathfinding\nPath length: " << path.size() << "\n\n";
@@ -118,11 +118,11 @@ void testPathfinderFunctions(const pathfinding::Pathfinder<int> pathfinder) {
 
 int main(int argc, char** argv) {
     const pathfinding::Grid<int> grid ({
+        { 0, -1, 0, -1, 0 },
+        { 0, -1, 0, -1, 0 },
+        { 0, -1, 0, -1, 0 },
         { 0, -1, 0, 0, 0 },
-        { 0, -1, 0, -1, 0 },
-        { 0, -1, 0, -1, 0 },
-        { 0, -1, 0, -1, 0 },
-        { 0, 0, -1, 0, 0 }
+        { 0, 0, -1, -1, 0 }
     });
 
     //testGridFunctions(grid);
