@@ -28,12 +28,12 @@ To use `pathfinding.hpp` in your C++ project, follow these steps:
 
 ## Requirements
 
-C++ 14 or later
+C++ 17 or later
 
 ## Documentation
 
-All of the introduced types are under `namespace pathfinding`
-Introduced Types:
+These are the Types introduced in `namespace pathfinding`
+
 - [Node](#node)
 - [Grid](#grid)
 - [Pathfinder](#pathfinder)
@@ -65,13 +65,13 @@ Grid is a matrix-type-object of any Type
 
 #### Grid Creation Use Example (from tests/test.cpp):
 ```cpp
-const pathfinding::Grid<int> grid {
-    { 0, 0, 0, 0, 0 },
-    { 0, 0, 0, 0, 0 },
-    { 0, 1, 1, 1, 0 },
-    { 0, 0, 0, 1, 0 },
-    { 0, 0, 0, 0, 0 }
-};
+const pathfinding::Grid<int> grid ({
+    { 0, -1, 0, 0, 0 },
+    { 0, -1, 0, -1, 0 },
+    { 0, -1, 0, -1, 0 },
+    { 0, -1, 0, -1, 0 },
+    { 0, 0, -1, 0, 0 }
+});
 ```
 
 #### Related Functions:
@@ -102,9 +102,7 @@ const T& operator[](const Node& node) const;
 ```
 
 ##### 3. **Getter-Functions**
-Returns the data Size in a node:
-    - Node.x is data size.x
-          .y             .y
+Returns the data Size in a node: (as in a vector2int-like structure)
 ```cpp
 const Node getSize() const;
 ```
@@ -181,7 +179,16 @@ This is the automatic preset `MCF` for an `int`-Pathfinder.
 
 #### Pathfinder Use Example (from tests/test.cpp):
 
-
+```cpp
+namespace pf = pathfinding;
+// Create Path vector
+std::vector<pf::Node> path;
+pathfinder.find(pf::Node(4, 4), pf::Node(0, 0), path, pf::Grid<double>({ 
+    { 1.4,   1, 1.4 },
+    {   1,   0,   1 },
+    { 1.4,   1, 1.4 }
+}));
+```
 
 #### Pathfinder Functions
 
