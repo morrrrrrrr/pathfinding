@@ -6,6 +6,8 @@ A*-Pathfinding Algorithm Header-Only Implementation in C++
 
 `pathfinding.hpp` is a Header-Only C++ library implementing the A* pathfinding algorithm. It provides a simple and efficient way to find the shortest path between two points on a grid.
 
+![Alt-Text](explanation.gif)
+
 ## Table of Contents
 
 - [Installation](#installation)

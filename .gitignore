@@ -439,3 +439,6 @@ FodyWeavers.xsd
 tests/lodepng.h
 tests/lodepng.cpp
 tests/maze_output/
+
+# exclude gifs
+*.gif

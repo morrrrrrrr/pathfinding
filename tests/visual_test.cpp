@@ -26,10 +26,16 @@ unsigned width, height;
 
 size_t counter = 0;
 
+void saveImage() {
+    lodepng::encode("maze_output/maze" + std::to_string(counter) + ".png", image, width, height);
+    counter++;
+}
+
 void onNodePopped(const pathfinding::Node& node) {
     image[node.y * width * 4 + node.x * 4 + 0] = 0; 
-    image[node.y * width * 4 + node.x * 4 + 1] = image[node.y * width * 4 + node.x * 4 + 1]; 
-    image[node.y * width * 4 + node.x * 4 + 2] = 0; 
+    image[node.y * width * 4 + node.x * 4 + 1] = 200; 
+    image[node.y * width * 4 + node.x * 4 + 2] = 0;
+    //saveImage();
 }
 
 void onPathAdded(const pathfinding::Node& node) {
@@ -37,6 +43,7 @@ void onPathAdded(const pathfinding::Node& node) {
     image[node.y * width * 4 + node.x * 4 + 0] = 255;
     image[node.y * width * 4 + node.x * 4 + 1] = 0;
     image[node.y * width * 4 + node.x * 4 + 2] = 0;
+    //saveImage();
 }
 
 int main(int argc, char **argv) {
